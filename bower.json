@@ -24,7 +24,7 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0"
     }
   ],
-  "version": "1.4.0",
+  "version": "1.5.2",
   "main": "./aerogear.datamanager.min.js",
   "ignore": [
     "**/.*",

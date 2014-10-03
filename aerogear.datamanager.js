@@ -1,4 +1,4 @@
-/*! AeroGear JavaScript Library - v1.4.0 - 2014-03-24
+/*! AeroGear JavaScript Library - v1.5.2 - 2014-10-03
 * https://github.com/aerogear/aerogear-js
 * JBoss, Home of Professional Open Source
 * Copyright Red Hat, Inc., and individual contributors
@@ -50,7 +50,7 @@ AeroGear.Core = function() {
         } else if ( typeof config === "string" ) {
             // config is a string so use default adapter type
             collection[ config ] = AeroGear[ this.lib ].adapters[ this.type ]( config, this.config );
-        } else if ( AeroGear.isArray( config ) ) {
+        } else if ( Array.isArray( config ) ) {
             // config is an array so loop through each item in the array
             for ( i = 0; i < config.length; i++ ) {
                 current = config[ i ];
@@ -99,7 +99,7 @@ AeroGear.Core = function() {
         if ( typeof config === "string" ) {
             // config is a string so delete that item by name
             delete collection[ config ];
-        } else if ( AeroGear.isArray( config ) ) {
+        } else if ( Array.isArray( config ) ) {
             // config is an array so loop through each item in the array
             for ( i = 0; i < config.length; i++ ) {
                 current = config[ i ];
@@ -126,25 +126,28 @@ AeroGear.Core = function() {
     Utility function to test if an object is an Array
     @private
     @method
+    @deprecated
     @param {Object} obj - This can be any object to test
 */
 AeroGear.isArray = function( obj ) {
-    return ({}).toString.call( obj ) === "[object Array]";
+    return Array.isArray( obj );
 };
 
 /**
-    Utility function to merge 2 Objects together.
+    Utility function to merge many Objects in one target Object which is the first object in arguments list.
     @private
     @method
-    @param {Object} obj1 - An Object to be merged.
-    @param {Object} obj2 - An Object to be merged.  This Objects Value takes precendence.
 */
-AeroGear.extend = function( obj1, obj2 ) {
-    var name;
-    for( name in obj2 ) {
-        obj1[ name ] = obj2[ name ];
+AeroGear.extend = function() {
+    var name, i, source,
+        target = arguments[ 0 ];
+    for( i=1; i<arguments.length; i++ ) {
+        source = arguments[ i ];
+        for( name in source ) {
+            target[ name ] = source[ name ];
+        }
     }
-    return obj1;
+    return target;
 };
 
 /**
@@ -247,7 +250,7 @@ AeroGear.DataManager = function( config ) {
 
         var i, type, fallback, preferred, settings;
 
-        config = AeroGear.isArray( config ) ? config : [ config ];
+        config = Array.isArray( config ) ? config : [ config ];
 
         config = config.map( function( value, index, array ) {
             settings = value.settings || {};
@@ -438,7 +441,7 @@ AeroGear.DataManager.adapters.base = function( storeName, settings ) {
         if( crypto.agcrypto ) {
             IV = JSON.parse( window.localStorage.getItem( "ag-" + storeName + "-IV" ) ) || {};
             cryptoOptions.IV = IV.id;
-            data = AeroGear.isArray( data ) ? data : [ data ];
+            data = Array.isArray( data ) ? data : [ data ];
             content = data.map( function( value ) {
                 cryptoOptions.data = value.data;
                 return JSON.parse( sjcl.codec.utf8String.fromBits( crypto.agcrypto.decrypt( cryptoOptions ) ) );
@@ -465,8 +468,11 @@ AeroGear.DataManager.adapters.base = function( storeName, settings ) {
 var dm = AeroGear.DataManager();
 
 // Add a custom memory store
-dm.add( "newStore", {
-    recordId: "customID"
+dm.add({
+    name: "newStore",
+    settings: {
+        recordId: "customID"
+    }
 });
  */
 AeroGear.DataManager.adapters.Memory = function( storeName, settings ) {
@@ -510,17 +516,6 @@ AeroGear.DataManager.adapters.Memory = function( storeName, settings ) {
      */
     this.removeDataRecord = function( index ) {
         this.getData().splice( index, 1 );
-    };
-
-    /**
-        A Function for a jQuery.Deferred to always call
-        @private
-        @augments Memory
-     */
-    this.always = function( value, status, callback ) {
-        if( callback ) {
-            callback.call( this, value, status );
-        }
     };
 
     /**
@@ -653,7 +648,7 @@ AeroGear.DataManager.adapters.Memory.prototype.save = function( data, options ) 
     var itemFound = false,
         deferred = jQuery.Deferred();
 
-    data = AeroGear.isArray( data ) ? data : [ data ];
+    data = Array.isArray( data ) ? data : [ data ];
 
     if ( options && options.reset ) {
         this.setData( data );
@@ -731,7 +726,7 @@ AeroGear.DataManager.adapters.Memory.prototype.remove = function( toRemove, opti
         this.emptyData();
         return deferred.resolve( this.getData(), "success", options ? options.success : undefined );
     } else {
-        toRemove = AeroGear.isArray( toRemove ) ? toRemove : [ toRemove ];
+        toRemove = Array.isArray( toRemove ) ? toRemove : [ toRemove ];
     }
 
     for ( var i = 0; i < toRemove.length; i++ ) {
@@ -814,7 +809,7 @@ AeroGear.DataManager.adapters.Memory.prototype.filter = function( filterParamete
                 paramResult = filterObj.matchAny ? false : true;
 
                 for ( j = 0; j < filterObj.data.length; j++ ) {
-                    if( AeroGear.isArray( value[ keys[ key ] ] ) ) {
+                    if( Array.isArray( value[ keys[ key ] ] ) ) {
                         if( value[ keys [ key ] ].length ) {
                             if( jQuery( value[ keys ] ).not( filterObj.data ).length === 0 && jQuery( filterObj.data ).not( value[ keys ] ).length === 0 ) {
                                 paramResult = true;
@@ -874,7 +869,7 @@ AeroGear.DataManager.adapters.Memory.prototype.filter = function( filterParamete
                 }
             } else {
                 // Filter on parameter value
-                if( AeroGear.isArray( value[ keys[ key ] ] ) ) {
+                if( Array.isArray( value[ keys[ key ] ] ) ) {
                     paramResult = matchAny ? false: true;
 
                     if( value[ keys[ key ] ].length ) {
@@ -943,9 +938,13 @@ AeroGear.DataManager.validateAdapter( "Memory", AeroGear.DataManager.adapters.Me
 var dm = AeroGear.DataManager();
 
 // Add a custom SessionLocal store using local storage as its storage type
-dm.add( "newStore", {
-    recordId: "customID",
-    storageType: "localStorage"
+dm.add({
+    name: "newStore",
+    type: "SessionLocal"
+    settings: {
+        recordId: "customID",
+        storageType: "localStorage"
+    }
 });
  */
 AeroGear.DataManager.adapters.SessionLocal = function( storeName, settings ) {
@@ -1166,7 +1165,7 @@ AeroGear.DataManager.validateAdapter( "SessionLocal", AeroGear.DataManager.adapt
     // Add an IndexedDB store
     dm.add({
         name: "newStore",
-        storageType: "IndexedDB"
+        type: "IndexedDB"
     });
 
  */
@@ -1280,7 +1279,7 @@ AeroGear.DataManager.adapters.IndexedDB.isValid = function() {
     // Add an IndexedDB store
     dm.add({
         name: "newStore",
-        storageType: "IndexedDB"
+        type: "IndexedDB"
     });
 
     dm.stores.newStore.open({
@@ -1335,7 +1334,7 @@ AeroGear.DataManager.adapters.IndexedDB.prototype.open = function( options ) {
     // Add an IndexedDB store
     dm.add({
         name: "newStore",
-        storageType: "IndexedDB"
+        type: "IndexedDB"
     });
 
     dm.stores.newStore.open({
@@ -1422,7 +1421,7 @@ AeroGear.DataManager.adapters.IndexedDB.prototype.read = function( id, options )
     // Add an IndexedDB store
     dm.add({
         name: "newStore",
-        storageType: "IndexedDB"
+        type: "IndexedDB"
     });
 
     dm.stores.newStore.open({
@@ -1465,7 +1464,7 @@ AeroGear.DataManager.adapters.IndexedDB.prototype.save = function( data, options
             objectStore.clear();
         }
 
-        if( AeroGear.isArray( data ) ) {
+        if( Array.isArray( data ) ) {
             for( i; i < data.length; i++ ) {
                 objectStore.put( this.encrypt( data[ i ] ) );
             }
@@ -1508,7 +1507,7 @@ AeroGear.DataManager.adapters.IndexedDB.prototype.save = function( data, options
     // Add an IndexedDB store
     dm.add({
         name: "newStore",
-        storageType: "IndexedDB"
+        type: "IndexedDB"
     });
 
     dm.stores.newStore.open({
@@ -1545,7 +1544,7 @@ AeroGear.DataManager.adapters.IndexedDB.prototype.remove = function( toRemove, o
         if( !toRemove ) {
             objectStore.clear();
         } else  {
-            toRemove = AeroGear.isArray( toRemove ) ? toRemove: [ toRemove ];
+            toRemove = Array.isArray( toRemove ) ? toRemove: [ toRemove ];
 
             for( i; i < toRemove.length; i++ ) {
                 if ( typeof toRemove[ i ] === "string" || typeof toRemove[ i ] === "number" ) {
@@ -1594,7 +1593,7 @@ AeroGear.DataManager.adapters.IndexedDB.prototype.remove = function( toRemove, o
     // Add an IndexedDB store
     dm.add({
         name: "newStore",
-        storageType: "IndexedDB"
+        type: "IndexedDB"
     });
 
     dm.stores.newStore.open({
@@ -1644,7 +1643,7 @@ AeroGear.DataManager.adapters.IndexedDB.prototype.filter = function( filterParam
     // Add an IndexedDB store and then delete a record
     dm.add({
         name: "newStore",
-        storageType: "IndexedDB"
+        type: "IndexedDB"
     });
 
     dm.stores.newStore.close();
@@ -1681,7 +1680,7 @@ AeroGear.DataManager.validateAdapter( "IndexedDB", AeroGear.DataManager.adapters
     // Add an WebSQL store
     dm.add({
         name: "newStore",
-        storageType: "WebSQL"
+        type: "WebSQL"
     });
 
  */
@@ -1795,7 +1794,7 @@ AeroGear.DataManager.adapters.WebSQL.isValid = function() {
     // Add an WebSQL store
     dm.add({
         name: "newStore",
-        storageType: "WebSQL"
+        type: "WebSQL"
     });
 
     dm.stores.newStore.open({
@@ -1848,7 +1847,7 @@ AeroGear.DataManager.adapters.WebSQL.prototype.open = function( options ) {
     // Add an WebSQL store
     dm.add({
         name: "newStore",
-        storageType: "WebSQL"
+        type: "WebSQL"
     });
 
     dm.stores.newStore.open({
@@ -1926,7 +1925,7 @@ AeroGear.DataManager.adapters.WebSQL.prototype.read = function( id, options ) {
     // Add an WebSQL store
     dm.add({
         name: "newStore",
-        storageType: "WebSQL"
+        type: "WebSQL"
     });
 
     dm.stores.newStore.open({
@@ -1977,7 +1976,7 @@ AeroGear.DataManager.adapters.WebSQL.prototype.save = function( data, options ) 
             });
         };
 
-        data = AeroGear.isArray( data ) ? data : [ data ];
+        data = Array.isArray( data ) ? data : [ data ];
 
         database.transaction( function( transaction ) {
             if( options.reset ) {
@@ -2010,7 +2009,7 @@ AeroGear.DataManager.adapters.WebSQL.prototype.save = function( data, options ) 
     // Add an IndexedDB store
     dm.add({
         name: "newStore",
-        storageType: "WebSQL"
+        type: "WebSQL"
     });
 
     dm.stores.newStore.open({
@@ -2064,7 +2063,7 @@ AeroGear.DataManager.adapters.WebSQL.prototype.remove = function( toRemove, opti
                 transaction.executeSql( sql, [], success, error );
             });
         } else {
-            toRemove = AeroGear.isArray( toRemove ) ? toRemove: [ toRemove ];
+            toRemove = Array.isArray( toRemove ) ? toRemove: [ toRemove ];
             database.transaction( function( transaction ) {
                 for( i; i < toRemove.length; i++ ) {
                     if ( typeof toRemove[ i ] === "string" || typeof toRemove[ i ] === "number" ) {
@@ -2099,7 +2098,7 @@ AeroGear.DataManager.adapters.WebSQL.prototype.remove = function( toRemove, opti
     // Add an IndexedDB store
     dm.add({
         name: "newStore",
-        storageType: "WebSQL"
+        type: "WebSQL"
     });
 
     dm.stores.newStore.open({
