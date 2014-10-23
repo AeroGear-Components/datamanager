@@ -24,15 +24,12 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0"
     }
   ],
-  "version": "2.0.0-beta",
+  "version": "2.0.0",
   "main": "./aerogear.datamanager.min.js",
   "ignore": [
     "**/.*",
     "node_modules",
     "components"
   ],
-  "dependencies": {
-    "jquery": "2.0.x"
-  },
   "devDependencies": {}
 }
